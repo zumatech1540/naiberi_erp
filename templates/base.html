@@ -75,7 +75,7 @@
     </a>
 
     <!-- 🔥 SUPER ADMIN OVERRIDE -->
-   {% if request.user.role == "viewer" %}
+   {% if request.user.role == "super_admin" %}
 
     <a href="/waste/">Waste Management</a>
     <a href="/inventory/">Inventory</a>
