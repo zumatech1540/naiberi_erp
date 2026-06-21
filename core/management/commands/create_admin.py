@@ -11,15 +11,18 @@ class Command(BaseCommand):
         email = os.getenv('DJANGO_SUPERUSER_EMAIL', 'admin@naiberi.com')
         password = os.getenv('DJANGO_SUPERUSER_PASSWORD', 'naiberi@123')
 
-        if not User.objects.filter(username=username).exists():
-            # Create the superuser and explicitly set the role to 'super_admin'
-            user = User.objects.create_superuser(
-                username=username, 
-                email=email, 
-                password=password
-            )
-            user.role = 'Super Admin'  # Mapping to your User model's choices
-            user.save()
-            self.stdout.write(self.style.SUCCESS(f'Superuser {username} created with role: Super Admin'))
+        user, created = User.objects.get_or_create(username=username)
+        
+        # Force set these flags to ensure full access
+        user.email = email
+        user.set_password(password)
+        user.is_staff = True
+        user.is_superuser = True
+        user.is_active = True
+        user.role = 'Super Admin' 
+        user.save()
+
+        if created:
+            self.stdout.write(self.style.SUCCESS(f'Superuser {username} created.'))
         else:
-            self.stdout.write(self.style.WARNING(f'Superuser {username} already exists.'))
+            self.stdout.write(self.style.SUCCESS(f'Superuser {username} permissions updated.'))
