@@ -1,28 +1,23 @@
-import os
-from django.core.management.base import BaseCommand
+from django.db.models.signals import post_migrate
+from django.dispatch import receiver
 from django.contrib.auth import get_user_model
+import os
 
-class Command(BaseCommand):
-    help = 'Creates an admin user with Super Admin role'
+@receiver(post_migrate)
+def create_superuser_on_migrate(sender, **kwargs):
+    # This runs automatically after your database migrations finish
+    User = get_user_model()
+    username = os.getenv('DJANGO_SUPERUSER_USERNAME', 'admin')
+    email = os.getenv('DJANGO_SUPERUSER_EMAIL', 'admin@naiberi.com')
+    password = os.getenv('DJANGO_SUPERUSER_PASSWORD', 'naiberi@123')
 
-    def handle(self, *args, **options):
-        User = get_user_model()
-        username = os.getenv('DJANGO_SUPERUSER_USERNAME', 'admin')
-        email = os.getenv('DJANGO_SUPERUSER_EMAIL', 'admin@naiberi.com')
-        password = os.getenv('DJANGO_SUPERUSER_PASSWORD', 'naiberi@123')
-
-        user, created = User.objects.get_or_create(username=username)
-        
-        # Force set these flags to ensure full access
-        user.email = email
-        user.set_password(password)
-        user.is_staff = True
-        user.is_superuser = True
-        user.is_active = True
-        user.role = 'Super Admin' 
-        user.save()
-
-        if created:
-            self.stdout.write(self.style.SUCCESS(f'Superuser {username} created.'))
-        else:
-            self.stdout.write(self.style.SUCCESS(f'Superuser {username} permissions updated.'))
+    user, created = User.objects.get_or_create(username=username)
+    user.email = email
+    user.set_password(password)
+    user.is_staff = True
+    user.is_superuser = True
+    user.is_active = True
+    # If you have a custom role field, uncomment the line below:
+    # user.role = 'Super Admin' 
+    user.save()
+    print(f"DEBUG: Superuser {username} enforced by migration signal.")
