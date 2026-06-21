@@ -7,6 +7,7 @@ urlpatterns = [
     # DASHBOARDS (TOP PRIORITY)
     # =========================
     path('collector/', views.collector_dashboard, name='collector_dashboard'),
+    
     path('', views.waste_dashboard, name='waste_dashboard'),
 
     # =========================
