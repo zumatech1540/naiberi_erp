@@ -12,7 +12,7 @@ urlpatterns = [
     path('waste/', include('waste_management.urls')),
     path('finance/', include('finance.urls')),
     path('sales/', include('sales.urls')),
-    path('collector-dashboard/', views.collector_dashboard, name='collector_dashboard'),
+    path('collector/', views.collector_dashboard, name='collector_dashboard'),
     
     # FIX: Point the reports base URL directly to inventory.urls 
     # where your reports_hub is waiting at the root!
