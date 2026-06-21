@@ -49,70 +49,21 @@
 
     <!-- ================= DASHBOARD ROUTING ================= -->
     
-    <!-- ================= SUPER ADMIN ================= -->
-    {% if request.user.role == "super_admin" %}
+   <div class="sidebar">
+    <h4 class="text-center">MRF ERP</h4>
+    <hr>
 
-        <a href="/waste/"><i class="fa fa-recycle"></i> Waste</a>
-        <a href="/inventory/"><i class="fa fa-box"></i> Inventory</a>
-        <a href="/finance/"><i class="fa fa-coins"></i> Finance</a>
-        <a href="/hr/"><i class="fa fa-users"></i> HR</a>
-         <a href="/sales/"><i class="fa fa-chart-bar"></i> Sales</a>
-        <a href="/reports/"><i class="fa fa-chart-bar"></i> Reports</a>
-        <a href="/admin/"><i class="fa fa-user-cog"></i> Admin Panel</a>
-
-
-    {% endif %}
-
-    <!-- ================= COLLECTION OFFICER ================= -->
-    {% if request.user.role == "collection" %}
-
-        <a href="/waste/collector/">
-            <i class="fa fa-recycle"></i> My Waste Dashboard
-        </a>
-
-        <a href="/waste/intake/">
-            <i class="fa fa-plus"></i> Record Waste
-        </a>
-
-    {% endif %}
-
-    <!-- ================= INVENTORY ================= -->
-    {% if request.user.role == "inventory" %}
-
-        <a href="/inventory/">
-            <i class="fa fa-box"></i> Inventory Dashboard
-        </a>
-
-        <a href="/inventory/stock/">
-            <i class="fa fa-exchange-alt"></i> Stock Movements
-        </a>
-
-    {% endif %}
-
-    <!-- ================= FINANCE ================= -->
-    {% if request.user.role == "finance" %}
-
-        <a href="/finance/">
-            <i class="fa fa-coins"></i> Finance Dashboard
-        </a>
-        <a href="/finance/reports/">
-            <i class="fa fa-chart-line"></i> Financial Reports
-        </a>
-        <a href="/dashboard/">
-        <i class="fa fa-home"></i> Dashboard
-    </a>
-
-    {% endif %}
-
-    <!-- ================= HR ================= -->
-    {% if request.user.role == "hr" %}
-
-        <a href="/hr/">
-            <i class="fa fa-users"></i> HR Dashboard
-        </a>
-
-    {% endif %}
-
+    <a href="/waste/"><i class="fa fa-recycle"></i> Waste</a>
+    <a href="/inventory/"><i class="fa fa-box"></i> Inventory</a>
+    <a href="/finance/"><i class="fa fa-coins"></i> Finance</a>
+    <a href="/hr/"><i class="fa fa-users"></i> HR</a>
+    <a href="/sales/"><i class="fa fa-chart-bar"></i> Sales</a>
+    <a href="/reports/"><i class="fa fa-chart-bar"></i> Reports</a>
+    <a href="/admin/"><i class="fa fa-user-cog"></i> Admin Panel</a>
+    
+    <hr>
+    <a href="/logout/"><i class="fa fa-sign-out"></i> Logout</a>
+</div>
     <!-- ================= SHARED ================= -->
     
    
