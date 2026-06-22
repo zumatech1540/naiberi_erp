@@ -147,7 +147,7 @@ def waste_intake(request):
             created_by=request.user
         )
 
-        return redirect("colector_dashboard")
+        return redirect("waste_dashboard")
 
     return render(request, "waste_management/intake.html", {
         "categories": categories,
