@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, F
 from django.db import transaction
 from django.http import HttpResponse
+from core.models import Supplier
 from django.utils.timezone import now
 
 from accounts.decorators import role_required
@@ -15,7 +16,7 @@ from .models import (
     StockMovement,
     SalesOrder,
     SalesOrderItem,
-    Supplier,
+   
     PurchaseOrder,
     AccountReceivable
 )

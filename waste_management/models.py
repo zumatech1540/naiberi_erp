@@ -1,45 +1,16 @@
 import os
-from django.db import models
-from django.conf import settings
-from django.utils import timezone
 from decimal import Decimal
-from django.db import models
-from django.utils import timezone
 
-from core.models import Transaction
-from inventory.models import Item, StockMovement
-from django.conf import settings
-from decimal import Decimal
 from django.db import models, transaction
+from django.conf import settings
 from django.utils import timezone
 
-# Clean External Module Imports
+# Core module
 from core.models import Transaction
+
+# Inventory module
 from inventory.models import Item, StockMovement
-
-# ==========================================================
-# 1. CORE RELATION MODELS
-# ==========================================================
-class Supplier(models.Model):
-    name = models.CharField(max_length=255)
-    phone = models.CharField(max_length=30, blank=True, null=True)
-
-    PAYMENT_METHODS = [
-        ('cash', 'Cash'),
-        ('mpesa', 'M-Pesa'),
-        ('bank', 'Bank'),
-        ('credit', 'Credit'),
-    ]
-
-    payment_method = models.CharField(
-        max_length=20,
-        choices=PAYMENT_METHODS,
-        default='mpesa'
-    )
-
-    def __str__(self):
-        return self.name
-
+from core.models import Supplier
 class WasteCategory(models.Model):
     name = models.CharField(max_length=255, unique=True)
 
@@ -71,7 +42,7 @@ class WasteIntake(models.Model):
     category = models.ForeignKey('WasteCategory', on_delete=models.CASCADE)
 
     supplier = models.ForeignKey(
-        'Supplier',
+        'core.Supplier',
         on_delete=models.PROTECT,
         null=True,
         blank=True
@@ -101,20 +72,11 @@ class WasteIntake(models.Model):
         blank=True
     )
 
-    # =========================
-    # TIMESTAMP
-    # =========================
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # =========================
-    # STRING REPRESENTATION
-    # =========================
     def __str__(self):
         return f"{self.category.name} - {self.quantity} KG"
 
-    # =========================
-    # ERP AUTOMATION ENGINE
-    # =========================
     def save(self, *args, **kwargs):
 
         is_new = self.pk is None
@@ -123,12 +85,13 @@ class WasteIntake(models.Model):
         if not is_new:
             return
 
-        supplier_name = self.supplier.name if self.supplier else "Walk-in / Unknown"
+        supplier_name = (
+    f"{self.supplier.company_name} ({self.supplier.phone})"
+    if self.supplier else "Walk-in / Unknown"
+)
         category_name = self.category.name if self.category else "Unassigned"
+        
 
-        # =========================
-        # FINANCE TRANSACTION LOG
-        # =========================
         try:
             Transaction.objects.create(
                 type='waste_intake',
@@ -139,9 +102,6 @@ class WasteIntake(models.Model):
         except Exception as e:
             print("Transaction log error:", e)
 
-        # =========================
-        # INVENTORY SYNC
-        # =========================
         try:
             category_slug = category_name.strip().lower()
             valid_categories = ['plastic', 'metal', 'paper', 'organic', 'glass', 'other']
@@ -248,7 +208,8 @@ class WastePurchase(models.Model):
         if not is_new:
             return
 
-        supplier_name = self.supplier.name if self.supplier else "Unknown"
+        supplier_name = getattr(self.supplier, "company_name", "Unknown")
+        
         category_name = self.category.name if self.category else "Unassigned"
 
         try:

@@ -59,20 +59,20 @@
 
                 <!-- ========================= -->
                 <!-- SUPPLIER DROPDOWN -->
-                <!-- ========================= -->
-                <div class="mb-3">
-                    <label class="form-label">Supplier / Customer</label>
-                    <select name="supplier" class="form-select">
-                        <option value="">Walk-in Customer</option>
+<div class="mb-3">
+    <label class="form-label">Supplier / Customer</label>
 
-                        {% for supplier in suppliers %}
-                            <option value="{{ supplier.id }}">
-                                {{ supplier.name }}
-                                {% if supplier.phone %} - {{ supplier.phone }}{% endif %}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
+    <select name="supplier" class="form-select">
+        <option value="">Walk-in Customer</option>
+
+        {% for supplier in suppliers %}
+            <option value="{{ supplier.id }}">
+                {{ supplier.company_name }}
+                {% if supplier.phone %} - {{ supplier.phone }}{% endif %}
+            </option>
+        {% endfor %}
+    </select>
+</div>
 
                 <!-- ========================= -->
                 <!-- QUANTITY -->

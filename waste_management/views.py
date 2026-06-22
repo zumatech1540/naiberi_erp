@@ -1,66 +1,40 @@
 from datetime import datetime
 from decimal import Decimal
 
-# Django Shortcuts, HTTP & Auth
+# Django core
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.decorators import login_required
-from django.conf import settings
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
-from core.models import Department
-from core.services import get_or_create_department
-from decimal import Decimal
-from django.http import HttpResponse
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-
-from .models import WasteIntake, WasteCategory, Supplier
-from inventory.models import Item, StockMovement
-from core.models import Transaction
-from core.utils import get_department
-
-from .models import WasteIntake, WasteCategory, Supplier
-from inventory.models import Item, StockMovement
-from core.models import Transaction
-from core.utils import get_department
-from decimal import Decimal
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from .models import WasteCategory, Supplier, WasteIntake
-from core.utils import get_department
-
-from decimal import Decimal
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-
-# Django Database Queries & Utilities
 from django.db.models import Q, Sum, Count
 from django.utils import timezone
 from django.template.loader import get_template
+from django.conf import settings
+from django.contrib import messages
 
-# 3rd Party Libraries
+from core.models import Supplier
+
+# PDF generator
 from xhtml2pdf import pisa
 
-# Core & Accounts Modules
-from core.models import Transaction
+# Core app
+from core.models import Transaction, Department
+from core.services import get_or_create_department
+from core.utils import get_department
 
+# Auth
 from accounts.decorators import role_required
 
-# Inventory Module Imports 
-# (Aliased to Avoid Name Collision with Waste Management Supplier)
-from inventory.models import Item, StockMovement, Supplier as InventorySupplier
+# Inventory models (NO Supplier here anymore)
+from inventory.models import Item, StockMovement
 
-# Waste Management Local Imports
+# Waste models (ONLY waste objects here)
 from .models import (
-    WasteCategory, 
-    Supplier, 
-    WasteIntake, 
-    WastePurchase, 
-    WasteStatusHistory, 
-    
+    WasteIntake,
+    WasteCategory,
+    WastePurchase,
+    WasteStatusHistory,
 )
+
 from .utils import update_waste_status
 from .services import process_waste_intake
 
@@ -92,26 +66,10 @@ def waste_dashboard(request):
 
     return render(request, "waste_management/dashboard.html", context)
 
-# -------------------------
-# WASTE INTAKE FORM
-# -------------------------
-
-
-
- # Clean helper to resolve user departments
-
-
-
-
-
-# 🟢 REMOVED 'get_default_department' FROM THIS LINE:
-from .models import WasteCategory, Supplier, WasteIntake
+def supplier_display(supplier):
+    return getattr(supplier, "company_name", "Walk-in")
 
 from decimal import Decimal
-
-
-
-
 
 
 @login_required
@@ -175,7 +133,7 @@ def waste_intake(request):
             item=item,
             movement_type="in",
             quantity=quantity,
-            reason=f"Waste Intake - {supplier.name if supplier else 'Walk-in'}",
+            reason=f"Waste Intake - {supplier.company_name} ({supplier.phone})" if supplier else "Waste Intake - Walk-in",
             created_by=request.user
         )
 
@@ -185,11 +143,11 @@ def waste_intake(request):
         Transaction.objects.create(
             type="waste_intake",
             department = get_or_create_department("waste"),
-            description=f"{quantity}kg {category.name} from {supplier.name if supplier else 'Walk-in'}",
+            description=f"{quantity}kg {category.name} from {getattr(supplier, 'company_name', 'Walk-in')}",
             created_by=request.user
         )
 
-        return redirect("waste_dashboard")
+        return redirect("colector_dashboard")
 
     return render(request, "waste_management/intake.html", {
         "categories": categories,
@@ -379,59 +337,54 @@ def collector_dashboard(request):
         .filter(created_by=user)\
         .order_by('-created_at')[:10]
 
-    # 🟢 FIXED: Grab the first element from recent_purchases safely without crashing if empty
     latest_purchase = recent_purchases[0] if recent_purchases else None
 
-    # All-time high-level tracking totals for historical metrics
     total_purchases = WastePurchase.objects.filter(created_by=user).count()
+
     total_paid = WastePurchase.objects.filter(created_by=user).aggregate(
         total=Sum('total_amount')
     )['total'] or 0
 
     # ==========================================
-    # TODAY'S REAL-TIME SHIFT WORK LOGS
+    # TODAY'S SHIFT LOGS
     # ==========================================
-    todays_purchases = WastePurchase.objects.filter(created_by=user, created_at__date=today)
-    
-    # 1. Total metric weight purchased by collector today
+    todays_purchases = WastePurchase.objects.filter(
+        created_by=user,
+        created_at__date=today
+    )
+
     today_qty = todays_purchases.aggregate(total=Sum('quantity'))['total'] or 0
-    
-    # 2. Hard cash or automated M-Pesa payouts handed out today
+
     today_cash_payout = todays_purchases.filter(is_paid_on_delivery=True)\
         .aggregate(total=Sum('total_amount'))['total'] or 0
-        
-    # 3. Supply drops taken on credit term balances today
+
     today_credit_debt = todays_purchases.filter(is_paid_on_delivery=False)\
         .aggregate(total=Sum('total_amount'))['total'] or 0
 
     # ==========================================
-    # GLOBAL ACCESS DATA
+    # GLOBAL ACCESS DATA (FIXED)
     # ==========================================
     suppliers = Supplier.objects.filter(status='active').count()
 
     categories = WastePurchase.objects.values('category__name')\
-        .annotate(total_qty=Sum('quantity'))\
-        .order_by('-total_qty')
-
+    .annotate(total_qty=Sum('quantity'))\
+    .order_by('-total_qty')
     # ==========================================
-    # RENDER DISPATCH CONTEXT
+    # RENDER
     # ==========================================
     return render(request, 'waste_management/collector_dashboard.html', {
-        # Internal Intake Data
         'total_waste': total_waste,
         'received': received,
         'processing': processing,
         'completed': completed,
 
-        # History Feeds & All-time Stats
         'recent_purchases': recent_purchases,
         'total_purchases': total_purchases,
-        'latest_purchase': latest_purchase,  # <-- Works perfectly now!
+        'latest_purchase': latest_purchase,
         'total_paid': total_paid,
         'suppliers': suppliers,
         'categories': categories,
 
-        # Real-time Today Shift Audit Ribbons
         'today_qty': today_qty,
         'today_cash_payout': today_cash_payout,
         'today_credit_debt': today_credit_debt,
@@ -483,35 +436,47 @@ def purchase_detail(request, purchase_id):
         'purchase': purchase
     })
 
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from inventory.models import Supplier
+
+
+
+
 
 @login_required
 def add_supplier(request):
 
     if request.method == "POST":
 
-        name = request.POST.get('name')
-        contact_person = request.POST.get('contact_person') or ""
-        phone = request.POST.get('phone')
-        email = request.POST.get('email') or ""
-        address = request.POST.get('address') or ""
+        name = request.POST.get("name", "").strip()
+        phone = request.POST.get("phone", "").strip()
 
-        # IMPORTANT: match your model field
+        if not name:
+            messages.error(request, "Supplier name is required.")
+            return redirect("add_supplier")
+
+        if not phone:
+            messages.error(request, "Phone number is required.")
+            return redirect("add_supplier")
+
+        # Duplicate phone check
+        if Supplier.objects.filter(phone=phone).exists():
+            messages.error(
+                request,
+                f"Supplier with phone {phone} already exists."
+            )
+            return redirect("add_supplier")
+
         Supplier.objects.create(
             company_name=name,
-            contact_person=contact_person,
+            contact_person=request.POST.get("contact_person", ""),
             phone=phone,
-            email=email,
-            address=address,
+            email=request.POST.get("email", ""),
+            address=request.POST.get("address", ""),
         )
 
-        return redirect('supplier_list')
+        messages.success(request, "Supplier added successfully.")
+        return redirect("supplier_list")
 
-    return render(request, 'inventory/add_supplier.html')
-
-from inventory.models import Supplier
+    return render(request, "inventory/add_supplier.html")
 
 @login_required
 def add_item(request):
